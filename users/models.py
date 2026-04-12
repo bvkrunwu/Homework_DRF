@@ -26,9 +26,9 @@ class UserCustomManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
-        if extra_fields.get("is_staff"):
+        if extra_fields.get("is_staff") is not True:
             raise ValueError("Суперпользователь должен иметь is_staff=True.")
-        if extra_fields.get("is_superuser"):
+        if extra_fields.get("is_superuser") is not True:
             raise ValueError("Суперпользователь должен иметь is_superuser=True.")
 
         return self.create_user(email, password, **extra_fields)
@@ -92,3 +92,7 @@ class Payment(models.Model):
             raise ValidationError("Должен быть указан либо курс, либо урок.")
         if self.course and self.lesson:
             raise ValidationError("Нельзя оплатить и курс и, урок одновременно.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
