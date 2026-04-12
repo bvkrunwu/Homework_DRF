@@ -2,6 +2,14 @@ from rest_framework import serializers
 from rest_framework.serializers import SerializerMethodField
 
 from lms.models import Course, Lesson
+from users.models import Payment
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Payment
+        fields = "__all__"
 
 
 class CourseSerializer(serializers.ModelSerializer):
