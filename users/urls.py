@@ -12,7 +12,7 @@ from users.views import PaymentViewSet, UserProfileView, UserViewSet
 app_name = UsersConfig.name
 
 router = DefaultRouter()
-router.register(r"users", UserViewSet, basename="user")
+router.register(r"", UserViewSet, basename="user")
 router.register(r"payments", PaymentViewSet, basename="payment")
 
 urlpatterns = [
