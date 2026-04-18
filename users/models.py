@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from config import settings
-from lms.models import Course, Lesson
 
 
 class UserCustomManager(BaseUserManager):
@@ -23,6 +22,7 @@ class UserCustomManager(BaseUserManager):
         if not password:
             raise ValueError("Суперпользователь должен иметь пароль.")
 
+        extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
@@ -72,10 +72,10 @@ class Payment(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь")
     payment_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата оплаты")
     course = models.ForeignKey(
-        Course, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Оплаченный курс"
+        "lms.Course", on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Оплаченный курс"
     )
     lesson = models.ForeignKey(
-        Lesson, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Оплаченный урок"
+        "lms.Lesson", on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Оплаченный урок"
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма оплаты")
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, verbose_name="Способ оплаты")
