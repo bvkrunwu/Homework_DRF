@@ -5,6 +5,13 @@ from users.models import User
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
+    """
+    Административная панель для управления пользователями.
+
+    Предоставляет интерфейс для просмотра, редактирования и фильтрации пользователей
+    с отображением их групп и основными настройками доступа.
+    """
+
     list_display = ("id", "email", "phone_number", "is_staff", "is_active", "user_groups")
     list_editable = ("is_staff", "is_active")
     list_filter = ("is_staff", "is_active", "groups")
@@ -13,10 +20,39 @@ class UserAdmin(admin.ModelAdmin):
     exclude = ("password",)
 
     def get_queryset(self, request):
+        """
+        Настраивает queryset для оптимизации запросов к базе данных.
+
+            Добавляет prefetch_related для поля groups, чтобы избежать проблемы N+1
+            при отображении групп пользователей в списке.
+
+            Args:
+                request (HttpRequest): HTTP‑запрос от администратора.
+
+            Returns:
+                QuerySet: Оптимизированный набор пользователей с предварительно
+                загруженными группами.
+        """
+
         qs = super().get_queryset(request)
         return qs.prefetch_related("groups")
 
     def user_groups(self, obj):
+        """
+        Возвращает строковое представление групп пользователя для отображения в админке.
+
+        Если групп нет, возвращает «Нет групп». Если групп больше трёх, показывает
+        первые три и добавляет «и др.». В остальных случаях перечисляет все группы.
+
+        Используется как кастомное поле в list_display.
+
+        Args:
+            obj: Экземпляр модели User, для которого отображаются группы.
+
+        Returns:
+            str: Названия групп в виде строки.
+        """
+
         groups = obj.groups.all()
         if not groups:
             return "Нет групп"

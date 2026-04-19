@@ -3,6 +3,13 @@ from django.db import models
 
 
 class Course(models.Model):
+    """
+    Представляет учебный курс в системе.
+
+    Каждый курс содержит название, описание, необязательное превью‑изображение
+    и необязательного владельца. Курсы могут включать несколько уроков.
+    """
+
     title = models.CharField(max_length=200, verbose_name="Название курса", help_text="Укажите название курса")
     preview = models.ImageField(
         upload_to="courses/previews/",
@@ -22,14 +29,36 @@ class Course(models.Model):
     )
 
     def __str__(self):
+        """
+        Возвращает строковое представление курса.
+            Используется в админ‑панели Django и других интерфейсах для отображения объекта.
+                Returns:
+                    str: Название курса.
+        """
+
         return self.title
 
     class Meta:
+        """
+        Мета‑опции для модели Lesson.
+
+        Задаёт человеко‑читаемые названия модели в единственном
+            и множественном числе для отображения в админ‑панели.
+        """
+
         verbose_name = "Курс"
         verbose_name_plural = "Курсы"
 
 
 class Lesson(models.Model):
+    """
+    Представляет отдельный урок внутри учебного курса.
+
+    Каждый урок связан с определённым курсом и содержит название, описание,
+    необязательное превью‑изображение, необязательную ссылку на видео
+    и необязательного владельца.
+    """
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=200, verbose_name="Название урока", help_text="Укажите название урока")
     description = models.TextField(verbose_name="Описание урока", help_text="Заполните описание урока")
@@ -53,8 +82,22 @@ class Lesson(models.Model):
     )
 
     def __str__(self):
+        """
+        Возвращает строковое представление курса.
+           Используется в админ‑панели Django и других интерфейсах для отображения объекта.
+           Returns:
+               str: Название урока и курса.
+        """
+
         return f"{self.title} | Курс: {self.course.title}"
 
     class Meta:
+        """
+        Мета‑опции для модели Lesson.
+
+        Задаёт человеко‑читаемые названия модели в единственном
+            и множественном числе для отображения в админ‑панели.
+        """
+
         verbose_name = "Урок"
         verbose_name_plural = "Уроки"
