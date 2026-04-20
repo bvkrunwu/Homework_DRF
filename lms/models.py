@@ -1,7 +1,15 @@
+from django.conf import settings
 from django.db import models
 
 
 class Course(models.Model):
+    """
+    Представляет учебный курс в системе.
+
+    Каждый курс содержит название, описание, необязательное превью‑изображение
+    и необязательного владельца. Курсы могут включать несколько уроков.
+    """
+
     title = models.CharField(max_length=200, verbose_name="Название курса", help_text="Укажите название курса")
     preview = models.ImageField(
         upload_to="courses/previews/",
@@ -11,16 +19,46 @@ class Course(models.Model):
         help_text="загрузите превью курса",
     )
     description = models.TextField(verbose_name="Описание курса", help_text="Заполните описание курса")
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name="Владелец",
+        help_text="Введите владельца курса",
+    )
 
     def __str__(self):
+        """
+        Возвращает строковое представление курса.
+            Используется в админ‑панели Django и других интерфейсах для отображения объекта.
+                Returns:
+                    str: Название курса.
+        """
+
         return self.title
 
     class Meta:
+        """
+        Мета‑опции для модели Lesson.
+
+        Задаёт человеко‑читаемые названия модели в единственном
+            и множественном числе для отображения в админ‑панели.
+        """
+
         verbose_name = "Курс"
         verbose_name_plural = "Курсы"
 
 
 class Lesson(models.Model):
+    """
+    Представляет отдельный урок внутри учебного курса.
+
+    Каждый урок связан с определённым курсом и содержит название, описание,
+    необязательное превью‑изображение, необязательную ссылку на видео
+    и необязательного владельца.
+    """
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=200, verbose_name="Название урока", help_text="Укажите название урока")
     description = models.TextField(verbose_name="Описание урока", help_text="Заполните описание урока")
@@ -34,10 +72,32 @@ class Lesson(models.Model):
     video_url = models.URLField(
         blank=True, null=True, verbose_name="Ссылка на видео", help_text="Укажите ссылку на видео"
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name="Владелец",
+        help_text="Введите владельца урока",
+    )
 
     def __str__(self):
+        """
+        Возвращает строковое представление курса.
+           Используется в админ‑панели Django и других интерфейсах для отображения объекта.
+           Returns:
+               str: Название урока и курса.
+        """
+
         return f"{self.title} | Курс: {self.course.title}"
 
     class Meta:
+        """
+        Мета‑опции для модели Lesson.
+
+        Задаёт человеко‑читаемые названия модели в единственном
+            и множественном числе для отображения в админ‑панели.
+        """
+
         verbose_name = "Урок"
         verbose_name_plural = "Уроки"
