@@ -1,7 +1,10 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from lms.models import Course, Lesson
+from lms.models import Course, CourseSubscription, Lesson
 from lms.serializers import CourseDetailSerializer, CourseSerializer, LessonSerializer
 from users.permissions import IsModer, IsOwner
 
@@ -66,6 +69,44 @@ class CourseViewSet(viewsets.ModelViewSet):
         elif self.action == "destroy":
             self.permission_classes = (~IsModer | IsOwner,)
         return super().get_permissions()
+
+
+class CourseSubscriptionView(APIView):
+    """
+    API представление для управления подписками пользователя на курсы.
+
+    Позволяет подписаться на курс или отписаться от него одним POST-запросом.
+    Требует аутентификации пользователя.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """
+        Обрабатывает запрос на подписку или отписку от курса.
+
+            Если пользователь уже подписан на курс, подписка удаляется.
+            Если пользователь не подписан, создается новая подписка.
+
+            Ожидает в теле запроса JSON-объект с ключом 'course_id'.
+
+            Возвращает:
+                Response: JSON-объект с ключом 'message',
+                          содержащим статус выполненного действия.
+        """
+
+        user = request.user
+        course_id = request.data.get("course_id")
+        course = get_object_or_404(Course, id=course_id)
+
+        subscription, created = CourseSubscription.objects.get_or_create(user=user, course=course)
+        if not created:
+            subscription.delete()
+            message = "Подписка удалена"
+        else:
+            message = "Подписка добавлена"
+
+        return Response({"message": message})
 
 
 class LessonCreateApiView(generics.CreateAPIView):
