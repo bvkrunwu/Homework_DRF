@@ -40,7 +40,7 @@ class Course(models.Model):
 
     class Meta:
         """
-        Мета‑опции для модели Lesson.
+        Мета‑опции для модели Course.
 
         Задаёт человеко‑читаемые названия модели в единственном
             и множественном числе для отображения в админ‑панели.
@@ -101,3 +101,54 @@ class Lesson(models.Model):
 
         verbose_name = "Урок"
         verbose_name_plural = "Уроки"
+
+
+class CourseSubscription(models.Model):
+    """
+    Модель, представляющая подписку пользователя на обновления курса.
+
+    Связывает пользователя и курс. Позволяет отслеживать, кто из пользователей
+    подписан на определённый курс для рассылки уведомлений или отображения статуса.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+        related_name="course_subscriptions",
+        help_text="Пользователь, который подписывается на обновления курса",
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        verbose_name="Курс",
+        related_name="course_subscriptions",
+        help_text="Курс, на обновления которого оформляется подписка",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата подписки", help_text="Дата и время, когда была оформлена подписка"
+    )
+
+    def __str__(self):
+        """
+        Возвращает строковое представление объекта подписки.
+
+            Используется в админ-панели Django и других интерфейсах для отображения объекта.
+
+            Returns:
+                str: Информация о пользователе и курсе, на который он подписан.
+        """
+
+        return f"{self.user} подписан на {self.course}"
+
+    class Meta:
+        """
+        Мета-опции для модели CourseSubscription.
+
+           Задаёт человеко-читаемые названия модели в единственном и множественном числе.
+           Ограничивает уникальность пары (пользователь, курс), чтобы не было дублирующих подписок.
+        """
+
+        verbose_name = "Подписка на курс"
+        verbose_name_plural = "Подписки на курсы"
+        unique_together = ("user", "course")
