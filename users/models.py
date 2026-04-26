@@ -207,3 +207,54 @@ class Payment(models.Model):
 
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class StripePayment(models.Model):
+    """
+    Модель для хранения данных об оплате курсов через Stripe.
+
+    Связывает пользователя, курс и данные транзакции от платежной системы.
+    Используется для отслеживания статуса оплаты и предоставления доступа к контенту.
+    """
+
+    course = models.ForeignKey("lms.Course", on_delete=models.CASCADE, verbose_name="Курс")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name="Пользователь",
+        help_text="Укажите пользователя",
+    )
+    amount = models.PositiveIntegerField(verbose_name="сумма платежа", help_text="Укажите сумму платежа")
+    session_id = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="id сессии", help_text="Укажите id сессии"
+    )
+    link = models.URLField(
+        max_length=600, blank=True, null=True, verbose_name="Ссылка на оплату", help_text="Укажите ссылку на оплату"
+    )
+    status = models.CharField(max_length=20, default="pending")
+
+    class Meta:
+        """
+        Мета‑опции для модели StripePayment.
+
+            Задаёт человеко‑читаемые названия модели в единственном
+            и множественном числе для отображения в админ‑панели.
+        """
+
+        verbose_name = "Платёж"
+        verbose_name_plural = "Платежи"
+
+    def __str__(self):
+        """
+        Возвращает строковое представление платежа.
+
+            Создаёт читаемую строку для отображения объекта в списках,
+            админ-панели и отладочной информации.
+
+            Returns:
+                str: Форматированная строка с номером и суммой платежа.
+        """
+
+        return f"Платёж № {self.id} на {self.amount} руб."

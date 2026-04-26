@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from users.models import Payment, User
+from users.models import Payment, StripePayment, User
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -64,3 +64,21 @@ class UserSerializer(ModelSerializer):
 
         model = User
         fields = ["id", "email", "password", "phone_number", "country", "avatar", "is_staff", "is_active"]
+
+
+class StripePaymentSerializer(ModelSerializer):
+    """
+    Сериализатор для модели StripePayment.
+
+    Преобразует экземпляры модели StripePayment в JSON-формат и обратно.
+    Используется для создания и отображения данных о платежах, обрабатываемых через Stripe.
+    """
+
+    class Meta:
+        """
+        Мета-опции для StripePaymentSerializer.
+        Определяет модель и набор всех полей для сериализации.
+        """
+
+        model = StripePayment
+        fields = "__all__"
