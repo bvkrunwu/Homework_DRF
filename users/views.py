@@ -1,9 +1,12 @@
+import stripe
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, viewsets
+from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from users.models import Payment, User
-from users.serializers import PaymentSerializer, UserProfileSerializer, UserSerializer
+from users.models import Payment, StripePayment, User
+from users.serializers import PaymentSerializer, StripePaymentSerializer, UserProfileSerializer, UserSerializer
+from users.services import create_stripe_price, create_stripe_session
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -79,3 +82,52 @@ class PaymentViewSet(viewsets.ModelViewSet):
     filterset_fields = ("course", "lesson", "payment_method")
     ordering_fields = ("payment_date",)
     permission_classes = (IsAuthenticated,)
+
+
+class StripePaymentCreateApiView(CreateAPIView):
+    """
+    API View для создания платежа через Stripe.
+
+        Обрабатывает запрос на создание платежа, взаимодействует с API Stripe
+        для создания продукта, цены и сессии оплаты, а затем сохраняет
+        ссылку на оплату в базу данных.
+    """
+
+    serializer_class = StripePaymentSerializer
+    queryset = StripePayment.objects.all()
+
+    def perform_create(self, serializer):
+        """
+        Создаёт платёж и инициирует процесс оплаты через Stripe.
+
+            Этот метод вызывается при успешной валидации данных. Он создаёт
+            продукт и цену в Stripe, затем создаёт Checkout Session для
+            получения ссылки на оплату. После этого сохраняет все данные,
+            включая ссылку, в базу данных.
+
+            Args:
+                serializer (StripePaymentSerializer): Сериализатор с валидированными данными.
+
+            Логика метода:
+                1. Извлекает данные о курсе и сумме из сериализатора.
+                2. Создаёт продукт в Stripe на основе названия курса.
+                3. Создаёт цену для продукта, используя сумму из запроса.
+                4. Создаёт Checkout Session, получая ID сессии и ссылку на оплату.
+                5. Сохраняет объект StripePayment с полученными данными.
+        """
+
+        validated_data = serializer.validated_data
+        amount = validated_data.get("amount")
+        course = validated_data.get("course")
+
+        # 1. Создаём продукт в Stripe
+        product = stripe.Product.create(name=course.title)
+
+        # 2. Создаём цену для этого продукта
+        price = create_stripe_price(amount, product.id)
+
+        # 3. Создаём сессию оплаты
+        session_id, payment_link = create_stripe_session(price)
+
+        # 4. Сохраняем платёж в нашу базу данных
+        serializer.save(user=self.request.user, session_id=session_id, link=payment_link, status="pending")
