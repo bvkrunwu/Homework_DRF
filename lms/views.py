@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from lms.models import Course, CourseSubscription, Lesson
 from lms.paginators import CustomPagination
 from lms.serializers import CourseDetailSerializer, CourseSerializer, LessonSerializer
+from lms.tasks import send_course_update_notification
 from users.permissions import IsModer, IsOwner
 
 
@@ -71,6 +72,27 @@ class CourseViewSet(viewsets.ModelViewSet):
         elif self.action == "destroy":
             self.permission_classes = (~IsModer | IsOwner,)
         return super().get_permissions()
+
+    def perform_update(self, serializer):
+        """
+        Сохраняет обновленный курс и отправляет уведомления подписчикам.
+        """
+
+        course = serializer.save()
+
+        subscriptions = course.course_subscriptions.all()
+
+        if subscriptions.exists():
+
+            recipient_list = list(subscriptions.values_list("user__email", flat=True).distinct())
+
+            subject = f"Обновление курса: {course.title}"
+            message = (
+                f'Курс "{course.title}" был обновлен владельцем {course.owner}. \n\n'
+                f"Проверьте новые материалы или изменения в описании."
+            )
+
+            send_course_update_notification.delay(subject, message, recipient_list)
 
 
 class CourseSubscriptionView(APIView):
