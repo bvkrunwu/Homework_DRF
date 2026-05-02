@@ -2,7 +2,6 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-import django_celery_beat
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -128,6 +127,15 @@ SERVER_EMAIL = EMAIL_HOST_USER
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
+
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+CELERY_BEAT_SCHEDULE = {
+    "deactivate_inactive_users": {
+        "task": "lms.tasks.deactivate_inactive_users",
+        "schedule": timedelta(days=1),
+    }
+}
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
 
