@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+import django_celery_beat
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "drf_yasg",
     "django_filters",
+    "django_celery_beat",
     "users",
     "lms",
 ]
@@ -115,3 +117,13 @@ SIMPLE_JWT = {
 }
 
 STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
+
+CELERY_BROKER_URL = 'redis://localhost:6379'
+
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+
+CELERY_TIMEZONE = "Europe/Moscow"
+
+CELERY_TASK_TRACK_STARTED = True
+
+CELERY_TASK_TIME_LIMIT = 30 * 60
