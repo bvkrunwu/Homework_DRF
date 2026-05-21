@@ -1,0 +1,154 @@
+from django.conf import settings
+from django.db import models
+
+
+class Course(models.Model):
+    """
+    Представляет учебный курс в системе.
+
+    Каждый курс содержит название, описание, необязательное превью‑изображение
+    и необязательного владельца. Курсы могут включать несколько уроков.
+    """
+
+    title = models.CharField(max_length=200, verbose_name="Название курса", help_text="Укажите название курса")
+    preview = models.ImageField(
+        upload_to="courses/previews/",
+        blank=True,
+        null=True,
+        verbose_name="Превью курса",
+        help_text="загрузите превью курса",
+    )
+    description = models.TextField(verbose_name="Описание курса", help_text="Заполните описание курса")
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name="Владелец",
+        help_text="Введите владельца курса",
+    )
+
+    def __str__(self):
+        """
+        Возвращает строковое представление курса.
+            Используется в админ‑панели Django и других интерфейсах для отображения объекта.
+                Returns:
+                    str: Название курса.
+        """
+
+        return self.title
+
+    class Meta:
+        """
+        Мета‑опции для модели Course.
+
+        Задаёт человеко‑читаемые названия модели в единственном
+            и множественном числе для отображения в админ‑панели.
+        """
+
+        verbose_name = "Курс"
+        verbose_name_plural = "Курсы"
+
+
+class Lesson(models.Model):
+    """
+    Представляет отдельный урок внутри учебного курса.
+
+    Каждый урок связан с определённым курсом и содержит название, описание,
+    необязательное превью‑изображение, необязательную ссылку на видео
+    и необязательного владельца.
+    """
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="lessons")
+    title = models.CharField(max_length=200, verbose_name="Название урока", help_text="Укажите название урока")
+    description = models.TextField(verbose_name="Описание урока", help_text="Заполните описание урока")
+    preview = models.ImageField(
+        upload_to="lessons/previews/",
+        blank=True,
+        null=True,
+        verbose_name="Превью урока",
+        help_text="загрузите превью урока",
+    )
+    video_url = models.URLField(
+        blank=True, null=True, verbose_name="Ссылка на видео", help_text="Укажите ссылку на видео"
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name="Владелец",
+        help_text="Введите владельца урока",
+    )
+
+    def __str__(self):
+        """
+        Возвращает строковое представление курса.
+           Используется в админ‑панели Django и других интерфейсах для отображения объекта.
+           Returns:
+               str: Название урока и курса.
+        """
+
+        return f"{self.title} | Курс: {self.course.title}"
+
+    class Meta:
+        """
+        Мета‑опции для модели Lesson.
+
+        Задаёт человеко‑читаемые названия модели в единственном
+            и множественном числе для отображения в админ‑панели.
+        """
+
+        verbose_name = "Урок"
+        verbose_name_plural = "Уроки"
+
+
+class CourseSubscription(models.Model):
+    """
+    Модель, представляющая подписку пользователя на обновления курса.
+
+    Связывает пользователя и курс. Позволяет отслеживать, кто из пользователей
+    подписан на определённый курс для рассылки уведомлений или отображения статуса.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+        related_name="course_subscriptions",
+        help_text="Пользователь, который подписывается на обновления курса",
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        verbose_name="Курс",
+        related_name="course_subscriptions",
+        help_text="Курс, на обновления которого оформляется подписка",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата подписки", help_text="Дата и время, когда была оформлена подписка"
+    )
+
+    def __str__(self):
+        """
+        Возвращает строковое представление объекта подписки.
+
+            Используется в админ-панели Django и других интерфейсах для отображения объекта.
+
+            Returns:
+                str: Информация о пользователе и курсе, на который он подписан.
+        """
+
+        return f"{self.user} подписан на {self.course}"
+
+    class Meta:
+        """
+        Мета-опции для модели CourseSubscription.
+
+           Задаёт человеко-читаемые названия модели в единственном и множественном числе.
+           Ограничивает уникальность пары (пользователь, курс), чтобы не было дублирующих подписок.
+        """
+
+        verbose_name = "Подписка на курс"
+        verbose_name_plural = "Подписки на курсы"
+        unique_together = ("user", "course")
